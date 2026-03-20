@@ -21,8 +21,8 @@ async function obtenerPorId(id) {
 }
 
 async function crear(payload) {
-  if (!payload.usuario_id || !payload.nombre || !payload.meta) {
-    throw httpError(400, "usuario_id, nombre y meta son obligatorios");
+  if (!payload.usuario_id || !payload.meta) {
+    throw httpError(400, "usuario_id y meta son obligatorios");
   }
 
   if (Number(payload.meta) <= 0) {
@@ -49,7 +49,8 @@ async function eliminar(id) {
 
 async function obtenerResumen(usuarioId) {
   const objetivos = await objetivoAhorroRepository.findByUsuario(usuarioId);
-  const metaActiva = objetivos.data[0] || null;
+  const metaActiva =
+    objetivos.data.find((item) => item.estado === "activo") || objetivos.data[0] || null;
 
   if (!metaActiva) {
     return {

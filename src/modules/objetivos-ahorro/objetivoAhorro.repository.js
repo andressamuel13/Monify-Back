@@ -2,7 +2,7 @@ const pool = require("../../config/db");
 
 async function findAll() {
   const [rows] = await pool.query(
-    `SELECT id, usuario_id, nombre, meta, fecha_inicio, fecha_fin, estado, created_at, updated_at
+    `SELECT id, usuario_id, meta, fecha_inicio, fecha_fin, estado, created_at, updated_at
      FROM objetivos_ahorro
      ORDER BY id DESC`
   );
@@ -15,7 +15,7 @@ async function findAll() {
 
 async function findByUsuario(usuarioId) {
   const [rows] = await pool.query(
-    `SELECT id, usuario_id, nombre, meta, fecha_inicio, fecha_fin, estado, created_at, updated_at
+    `SELECT id, usuario_id, meta, fecha_inicio, fecha_fin, estado, created_at, updated_at
      FROM objetivos_ahorro
      WHERE usuario_id = ?
      ORDER BY
@@ -32,7 +32,7 @@ async function findByUsuario(usuarioId) {
 
 async function findById(id) {
   const [rows] = await pool.query(
-    `SELECT id, usuario_id, nombre, meta, fecha_inicio, fecha_fin, estado, created_at, updated_at
+    `SELECT id, usuario_id, meta, fecha_inicio, fecha_fin, estado, created_at, updated_at
      FROM objetivos_ahorro
      WHERE id = ?`,
     [id]
@@ -44,7 +44,6 @@ async function findById(id) {
 async function create(payload) {
   const {
     usuario_id,
-    nombre,
     meta,
     fecha_inicio = null,
     fecha_fin = null,
@@ -52,9 +51,9 @@ async function create(payload) {
   } = payload;
 
   const [result] = await pool.query(
-    `INSERT INTO objetivos_ahorro (usuario_id, nombre, meta, fecha_inicio, fecha_fin, estado)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [usuario_id, nombre, meta, fecha_inicio, fecha_fin, estado]
+    `INSERT INTO objetivos_ahorro (usuario_id, meta, fecha_inicio, fecha_fin, estado)
+     VALUES (?, ?, ?, ?, ?)`,
+    [usuario_id, meta, fecha_inicio, fecha_fin, estado]
   );
 
   const newItem = await findById(result.insertId);
@@ -73,11 +72,6 @@ async function update(id, payload) {
   if (payload.usuario_id !== undefined) {
     fields.push("usuario_id = ?");
     values.push(payload.usuario_id);
-  }
-
-  if (payload.nombre !== undefined) {
-    fields.push("nombre = ?");
-    values.push(payload.nombre);
   }
 
   if (payload.meta !== undefined) {

@@ -1,57 +1,96 @@
 const usuarioRepository = require("../usuarios/usuario.repository");
 const httpError = require("../../utils/httpError");
+const admin = require("../../config/firebaseAdmin");
 
 async function googleLogin(payload) {
-  if (!payload.google_id || !payload.nombre || !payload.email) {
-    throw httpError(400, "google_id, nombre y email son obligatorios");
+  if (!payload.idToken) {
+    throw httpError(400, "idToken es obligatorio");
   }
 
-  let usuario = await usuarioRepository.findByGoogleId(payload.google_id);
+  const decodedToken = await admin.auth().verifyIdToken(payload.idToken);
+
+  const firebase_uid = decodedToken.uid;
+  const nombre = decodedToken.name || payload.nombre || "Usuario";
+  const email = decodedToken.email;
+  const foto_url = decodedToken.picture || null;
+
+  if (!email) {
+    throw httpError(400, "El token de Firebase no contiene email");
+  }
+
+  let usuario = await usuarioRepository.findByFirebaseUid(firebase_uid);
 
   if (!usuario) {
-    const existentePorEmail = await usuarioRepository.findByEmail(payload.email);
+    const existentePorEmail = await usuarioRepository.findByEmail(email);
 
     if (existentePorEmail) {
       const actualizado = await usuarioRepository.update(existentePorEmail.id, {
-        google_id: payload.google_id,
-        nombre: payload.nombre,
-        foto_url: payload.foto_url,
+        firebase_uid,
+        nombre,
+        email,
+        foto_url,
       });
 
       return {
         ok: true,
-        message: "Usuario vinculado con Google correctamente",
-        data: actualizado.data,
+        message: "Usuario autenticado correctamente",
+        data: {
+          usuario: actualizado.data,
+          firebase: decodedToken,
+        },
       };
     }
 
-    const creado = await usuarioRepository.create(payload);
+    const creado = await usuarioRepository.create({
+      firebase_uid,
+      nombre,
+      email,
+      foto_url,
+    });
 
     return {
       ok: true,
       message: "Usuario autenticado y creado correctamente",
-      data: creado.data,
+      data: {
+        usuario: creado.data,
+        firebase: decodedToken,
+      },
     };
   }
 
   const actualizado = await usuarioRepository.update(usuario.id, {
-    nombre: payload.nombre,
-    email: payload.email,
-    foto_url: payload.foto_url,
+    nombre,
+    email,
+    firebase_uid,
+    foto_url,
   });
 
   return {
     ok: true,
     message: "Usuario autenticado correctamente",
-    data: actualizado.data,
+    data: {
+      usuario: actualizado.data,
+      firebase: decodedToken,
+    },
   };
 }
 
 async function me(reqUser = null) {
+  if (!reqUser) {
+    throw httpError(401, "Usuario no autenticado");
+  }
+
+  const usuario =
+    (await usuarioRepository.findByFirebaseUid(reqUser.uid)) ||
+    (reqUser.email ? await usuarioRepository.findByEmail(reqUser.email) : null);
+
   return {
     ok: true,
-    message: "Endpoint listo. Falta conectarlo a session o JWT",
-    data: reqUser,
+    message: "Perfil obtenido correctamente",
+    data: {
+      firebase: reqUser,
+      usuario,
+    },
   };
 }
 

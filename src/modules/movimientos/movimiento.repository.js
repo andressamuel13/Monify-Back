@@ -98,7 +98,7 @@ async function getResumenByUsuario(usuarioId) {
 }
 
 async function getHistorialByUsuario(usuarioId) {
-  const [rows] = await pool.query(
+  const [resumenRows] = await pool.query(
     `SELECT
       DATE_FORMAT(m.date, '%Y-%m') AS mes,
       COALESCE(SUM(CASE WHEN m.type = 'income' THEN m.amount ELSE 0 END), 0) AS ingresos,
@@ -112,14 +112,42 @@ async function getHistorialByUsuario(usuarioId) {
     [usuarioId]
   );
 
+  const [movimientoRows] = await pool.query(
+    `SELECT
+      m.id,
+      m.usuario_id,
+      m.categoria_id,
+      c.nombre AS category,
+      m.description,
+      m.amount,
+      m.date,
+      m.type,
+      DATE_FORMAT(m.date, '%Y-%m') AS mes,
+      m.created_at,
+      m.updated_at
+     FROM movimientos m
+     INNER JOIN categorias c ON c.id = m.categoria_id
+     WHERE m.usuario_id = ?
+     ORDER BY m.date DESC, m.id DESC`,
+    [usuarioId]
+  );
+
+  const historial = resumenRows.map((row) => ({
+    mes: row.mes,
+    ingresos: Number(row.ingresos),
+    gastos: Number(row.gastos),
+    balance: Number(row.balance),
+    movimientos: movimientoRows
+      .filter((movimiento) => movimiento.mes === row.mes)
+      .map(({ mes, ...movimiento }) => ({
+        ...movimiento,
+        amount: Number(movimiento.amount),
+      })),
+  }));
+
   return {
     ok: true,
-    data: rows.map((row) => ({
-      ...row,
-      ingresos: Number(row.ingresos),
-      gastos: Number(row.gastos),
-      balance: Number(row.balance),
-    })),
+    data: historial,
   };
 }
 

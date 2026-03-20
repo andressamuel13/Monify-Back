@@ -11,7 +11,7 @@ async function googleLogin(req, res, next) {
 
 async function me(_req, res, next) {
   try {
-    const data = await authService.me();
+    const data = await authService.me(_req.user);
     res.status(200).json(data);
   } catch (error) {
     next(error);
