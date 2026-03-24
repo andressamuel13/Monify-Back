@@ -2,7 +2,7 @@ const movimientoRepository = require("./movimiento.repository");
 const categoriaRepository = require("../categorias/categoria.repository");
 const httpError = require("../../utils/httpError");
 
-const TIPOS_VALIDOS = ["income", "expense", "saving"];
+const TIPOS_VALIDOS = ["income", "expense", "saving", "debt"];
 
 async function listar() {
   return movimientoRepository.findAll();

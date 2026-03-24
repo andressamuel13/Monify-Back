@@ -78,7 +78,9 @@ async function getResumenByUsuario(usuarioId) {
   const [rows] = await pool.query(
     `SELECT
       COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS ingresos,
-      COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS gastos
+      COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS gastos,
+      COALESCE(SUM(CASE WHEN type = 'saving' THEN amount ELSE 0 END), 0) AS ahorro,
+      COALESCE(SUM(CASE WHEN type = 'debt' THEN amount ELSE 0 END), 0) AS deuda
      FROM movimientos
      WHERE usuario_id = ?`,
     [usuarioId]
@@ -86,13 +88,17 @@ async function getResumenByUsuario(usuarioId) {
 
   const ingresos = Number(rows[0].ingresos || 0);
   const gastos = Number(rows[0].gastos || 0);
+  const ahorro = Number(rows[0].ahorro || 0);
+  const deuda = Number(rows[0].deuda || 0);
 
   return {
     ok: true,
     data: {
       ingresos,
       gastos,
-      balance: ingresos - gastos,
+      ahorro,
+      deuda,
+      balance: ingresos - gastos - ahorro - deuda,
     },
   };
 }
@@ -103,8 +109,12 @@ async function getHistorialByUsuario(usuarioId) {
       DATE_FORMAT(m.date, '%Y-%m') AS mes,
       COALESCE(SUM(CASE WHEN m.type = 'income' THEN m.amount ELSE 0 END), 0) AS ingresos,
       COALESCE(SUM(CASE WHEN m.type = 'expense' THEN m.amount ELSE 0 END), 0) AS gastos,
+      COALESCE(SUM(CASE WHEN m.type = 'saving' THEN m.amount ELSE 0 END), 0) AS ahorro,
+      COALESCE(SUM(CASE WHEN m.type = 'debt' THEN m.amount ELSE 0 END), 0) AS deuda,
       COALESCE(SUM(CASE WHEN m.type = 'income' THEN m.amount ELSE 0 END), 0) -
-      COALESCE(SUM(CASE WHEN m.type = 'expense' THEN m.amount ELSE 0 END), 0) AS balance
+      COALESCE(SUM(CASE WHEN m.type = 'expense' THEN m.amount ELSE 0 END), 0) -
+      COALESCE(SUM(CASE WHEN m.type = 'saving' THEN m.amount ELSE 0 END), 0) -
+      COALESCE(SUM(CASE WHEN m.type = 'debt' THEN m.amount ELSE 0 END), 0) AS balance
      FROM movimientos m
      WHERE m.usuario_id = ?
      GROUP BY DATE_FORMAT(m.date, '%Y-%m')
@@ -136,6 +146,8 @@ async function getHistorialByUsuario(usuarioId) {
     mes: row.mes,
     ingresos: Number(row.ingresos),
     gastos: Number(row.gastos),
+    ahorro: Number(row.ahorro),
+    deuda: Number(row.deuda),
     balance: Number(row.balance),
     movimientos: movimientoRows
       .filter((movimiento) => movimiento.mes === row.mes)

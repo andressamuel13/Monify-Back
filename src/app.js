@@ -5,6 +5,7 @@ const usuarioRoutes = require("./modules/usuarios/usuario.routes");
 const categoriaRoutes = require("./modules/categorias/categoria.routes");
 const movimientoRoutes = require("./modules/movimientos/movimiento.routes");
 const objetivoAhorroRoutes = require("./modules/objetivos-ahorro/objetivoAhorro.routes");
+const planLibertadRoutes = require("./modules/planes-libertad/planLibertad.routes");
 const authRoutes = require("./modules/auth/auth.routes");
 const errorMiddleware = require("./middlewares/error.middleware");
 
@@ -22,6 +23,7 @@ app.use("/api/usuarios", usuarioRoutes);
 app.use("/api/categorias", categoriaRoutes);
 app.use("/api/movimientos", movimientoRoutes);
 app.use("/api/objetivos-ahorro", objetivoAhorroRoutes);
+app.use("/api/planes-libertad", planLibertadRoutes);
 
 app.use(errorMiddleware);
 

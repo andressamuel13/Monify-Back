@@ -1,7 +1,7 @@
 const categoriaRepository = require("./categoria.repository");
 const httpError = require("../../utils/httpError");
 
-const TIPOS_VALIDOS = ["income", "expense", "saving"];
+const TIPOS_VALIDOS = ["income", "expense", "saving", "debt"];
 
 async function listar() {
   return categoriaRepository.findAll();

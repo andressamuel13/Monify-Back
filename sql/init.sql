@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(100) NOT NULL,
   email VARCHAR(150) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NULL,
   firebase_uid VARCHAR(100) UNIQUE,
   foto_url VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -14,7 +15,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
 CREATE TABLE IF NOT EXISTS categorias (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(100) NOT NULL,
-  tipo ENUM('income', 'expense', 'saving') NOT NULL,
+  tipo ENUM('income', 'expense', 'saving', 'debt') NOT NULL,
   activa TINYINT(1) NOT NULL DEFAULT 1,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -24,7 +25,7 @@ CREATE TABLE IF NOT EXISTS movimientos (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   usuario_id BIGINT UNSIGNED NOT NULL,
   categoria_id BIGINT UNSIGNED NOT NULL,
-  type ENUM('income', 'expense', 'saving') NOT NULL,
+  type ENUM('income', 'expense', 'saving', 'debt') NOT NULL,
   amount DECIMAL(12,2) NOT NULL,
   description VARCHAR(255) NULL,
   date DATE NOT NULL,
@@ -52,6 +53,20 @@ CREATE TABLE IF NOT EXISTS objetivos_ahorro (
     ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS planes_libertad (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  usuario_id BIGINT UNSIGNED NOT NULL,
+  meta DECIMAL(12,2) NOT NULL,
+  fecha_inicio DATE NULL,
+  fecha_fin DATE NULL,
+  estado ENUM('activo', 'cumplido', 'cancelado') NOT NULL DEFAULT 'activo',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_planes_libertad_usuario
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+    ON DELETE CASCADE
+);
+
 INSERT INTO categorias (nombre, tipo)
 SELECT * FROM (
   SELECT 'Salario', 'income' UNION ALL
@@ -63,6 +78,7 @@ SELECT * FROM (
   SELECT 'Moto', 'expense' UNION ALL
   SELECT 'Arriendo', 'expense' UNION ALL
   SELECT 'Deudas', 'expense' UNION ALL
+  SELECT 'abono-deuda', 'debt' UNION ALL
   SELECT 'Entretenimiento', 'expense' UNION ALL
   SELECT 'Servicios', 'expense' UNION ALL
   SELECT 'Ahorro', 'saving'

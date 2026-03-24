@@ -46,13 +46,24 @@ async function findByEmail(email) {
   return rows[0] || null;
 }
 
+async function findByEmailWithPassword(email) {
+  const [rows] = await pool.query(
+    `SELECT id, nombre, email, password_hash, firebase_uid, foto_url, created_at, updated_at
+     FROM usuarios
+     WHERE email = ?`,
+    [email]
+  );
+
+  return rows[0] || null;
+}
+
 async function create(payload) {
-  const { nombre, email, firebase_uid = null, foto_url = null } = payload;
+  const { nombre, email, password_hash = null, firebase_uid = null, foto_url = null } = payload;
 
   const [result] = await pool.query(
-    `INSERT INTO usuarios (nombre, email, firebase_uid, foto_url)
-     VALUES (?, ?, ?, ?)`,
-    [nombre, email, firebase_uid, foto_url]
+    `INSERT INTO usuarios (nombre, email, password_hash, firebase_uid, foto_url)
+     VALUES (?, ?, ?, ?, ?)`,
+    [nombre, email, password_hash, firebase_uid, foto_url]
   );
 
   const usuario = await findById(result.insertId);
@@ -76,6 +87,11 @@ async function update(id, payload) {
   if (payload.email !== undefined) {
     fields.push("email = ?");
     values.push(payload.email);
+  }
+
+  if (payload.password_hash !== undefined) {
+    fields.push("password_hash = ?");
+    values.push(payload.password_hash);
   }
 
   if (payload.firebase_uid !== undefined) {
@@ -112,6 +128,7 @@ module.exports = {
   findById,
   findByFirebaseUid,
   findByEmail,
+  findByEmailWithPassword,
   create,
   update,
   remove,

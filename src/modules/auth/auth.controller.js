@@ -1,5 +1,23 @@
 const authService = require("./auth.service");
 
+async function register(req, res, next) {
+  try {
+    const data = await authService.register(req.body);
+    res.status(201).json(data);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function login(req, res, next) {
+  try {
+    const data = await authService.login(req.body);
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function googleLogin(req, res, next) {
   try {
     const data = await authService.googleLogin(req.body);
@@ -28,6 +46,8 @@ async function logout(_req, res, next) {
 }
 
 module.exports = {
+  register,
+  login,
   googleLogin,
   me,
   logout,

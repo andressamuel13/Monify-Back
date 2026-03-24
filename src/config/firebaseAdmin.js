@@ -1,4 +1,10 @@
-const admin = require("firebase-admin");
+let firebaseAdmin = null;
+
+try {
+  firebaseAdmin = require("firebase-admin");
+} catch (_error) {
+  firebaseAdmin = null;
+}
 
 function getFirebasePrivateKey() {
   const privateKey = process.env.FIREBASE_PRIVATE_KEY;
@@ -11,8 +17,12 @@ function getFirebasePrivateKey() {
 }
 
 function initializeFirebase() {
-  if (admin.apps.length > 0) {
-    return admin;
+  if (!firebaseAdmin) {
+    return null;
+  }
+
+  if (firebaseAdmin.apps.length > 0) {
+    return firebaseAdmin;
   }
 
   const projectId = process.env.FIREBASE_PROJECT_ID;
@@ -20,20 +30,29 @@ function initializeFirebase() {
   const privateKey = getFirebasePrivateKey();
 
   if (!projectId || !clientEmail || !privateKey) {
-    throw new Error(
-      "Faltan FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL o FIREBASE_PRIVATE_KEY en las variables de entorno"
-    );
+    return null;
   }
 
-  admin.initializeApp({
-    credential: admin.credential.cert({
+  firebaseAdmin.initializeApp({
+    credential: firebaseAdmin.credential.cert({
       projectId,
       clientEmail,
       privateKey,
     }),
   });
 
-  return admin;
+  return firebaseAdmin;
 }
 
-module.exports = initializeFirebase();
+function getFirebaseAdmin() {
+  return initializeFirebase();
+}
+
+function isFirebaseEnabled() {
+  return Boolean(getFirebaseAdmin());
+}
+
+module.exports = {
+  getFirebaseAdmin,
+  isFirebaseEnabled,
+};
